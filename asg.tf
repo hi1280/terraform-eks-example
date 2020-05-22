@@ -1,3 +1,21 @@
+locals {
+  userdata = <<USERDATA
+#!/bin/bash
+set -o xtrace
+/etc/eks/bootstrap.sh "${aws_eks_cluster.eks_cluster.name}"
+USERDATA
+}
+
+data "aws_ami" "eks_node" {
+  most_recent = true
+  owners      = ["602401143452"]
+
+  filter {
+    name   = "name"
+    values = ["amazon-eks-node-${local.cluster_version}-*"]
+  }
+}
+
 resource "aws_autoscaling_group" "eks_asg" {
   name                 = "EKS cluster nodes"
   desired_capacity     = 2
@@ -27,24 +45,6 @@ resource "aws_autoscaling_group" "eks_asg" {
     create_before_destroy = true
   }
 
-}
-
-locals {
-  userdata = <<USERDATA
-#!/bin/bash
-set -o xtrace
-/etc/eks/bootstrap.sh "${aws_eks_cluster.eks_cluster.name}"
-USERDATA
-}
-
-data "aws_ami" "eks_node" {
-  most_recent = true
-  owners      = ["602401143452"]
-
-  filter {
-    name   = "name"
-    values = ["amazon-eks-node-${local.cluster_version}-*"]
-  }
 }
 
 resource "aws_launch_configuration" "eks_lc" {
